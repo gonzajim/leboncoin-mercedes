@@ -32,13 +32,20 @@ if result.status_code == 200:
     # Extraer kilometraje
     potential_kilometers = soup.find_all(string=lambda text: text and 'km' in text)
 
+    # Extraer enlaces
+    potential_links = soup.find_all('a', href=True)
+    detail_links = [
+        f"https://www.leboncoin.fr{link['href']}" for link in potential_links if '/ad/voitures/' in link['href']
+    ]
+
     # Combinar los datos extraídos
     cars = []
-    for description, price, km in zip(potential_descriptions, potential_prices, potential_kilometers):
+    for description, price, km, link in zip(potential_descriptions, potential_prices, potential_kilometers, detail_links):
         cars.append({
             'Descripción': description.strip(),
             'Precio': price.strip().replace('\u202f', '').replace('\xa0', '').replace('€', '').strip(),
-            'Kilometraje': km.strip().replace(' km', '').replace('\u202f', '').strip()
+            'Kilometraje': km.strip().replace(' km', '').replace('\u202f', '').strip(),
+            'Enlace': link
         })
 
     # Crear un DataFrame
