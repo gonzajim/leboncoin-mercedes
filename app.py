@@ -45,7 +45,7 @@ if result.status_code == 200:
             'Descripción': description.strip(),
             'Precio': price.strip().replace('\u202f', '').replace('\xa0', '').replace('€', '').strip(),
             'Kilometraje': km.strip().replace(' km', '').replace('\u202f', '').strip(),
-            'Enlace': link
+            'Enlace': f"[Ver anuncio]({link})"
         })
 
     # Crear un DataFrame
@@ -55,11 +55,22 @@ if result.status_code == 200:
     car_data['Precio'] = pd.to_numeric(car_data['Precio'], errors='coerce')
     car_data['Kilometraje'] = pd.to_numeric(car_data['Kilometraje'], errors='coerce')
 
-    # Ordenar por precio
-    car_data = car_data.sort_values(by='Precio')
+    # Agregar filtros para limitar resultados por precio y kilometraje
+    st.sidebar.header("Filtros")
+    min_price = st.sidebar.number_input("Precio mínimo", value=int(car_data['Precio'].min()), step=1000)
+    max_price = st.sidebar.number_input("Precio máximo", value=int(car_data['Precio'].max()), step=1000)
+    min_km = st.sidebar.number_input("Kilometraje mínimo", value=int(car_data['Kilometraje'].min()), step=1000)
+    max_km = st.sidebar.number_input("Kilometraje máximo", value=int(car_data['Kilometraje'].max()), step=1000)
 
-    # Mostrar los resultados en Streamlit
+    # Aplicar los filtros
+    filtered_data = car_data[(car_data['Precio'] >= min_price) & (car_data['Precio'] <= max_price) &
+                             (car_data['Kilometraje'] >= min_km) & (car_data['Kilometraje'] <= max_km)]
+
+    # Ordenar por precio
+    filtered_data = filtered_data.sort_values(by='Precio')
+
+    # Mostrar los resultados en Streamlit con capacidad de ordenar
     st.title("Tabla de coches")
-    st.dataframe(car_data)
+    st.dataframe(filtered_data, use_container_width=True)
 else:
     st.error(f"Error al acceder a la página: {result.status_code}")
