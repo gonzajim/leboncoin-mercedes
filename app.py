@@ -2,8 +2,11 @@ import streamlit as st
 import pandas as pd
 from scrapfly import ScrapflyClient, ScrapeConfig
 
-# Inicializar el cliente de Scrapfly con tu clave de API
-scrapfly = ScrapflyClient(key="TU_CLAVE_DE_API")
+# Obtener la clave de API desde los secretos
+api_key = st.secrets["scrapfly_api_key"]
+
+# Inicializar el cliente de Scrapfly con la clave de API
+scrapfly = ScrapflyClient(key=api_key)
 
 # Configurar la solicitud de scraping
 scrape_config = ScrapeConfig(
@@ -18,7 +21,7 @@ result = scrapfly.scrape(scrape_config)
 # Verificar el estado de la respuesta
 if result.status_code == 200:
     # Procesar el contenido de la página
-    # Aquí debes implementar la lógica para extraer los datos relevantes
+    # Implementa aquí la lógica para extraer los datos relevantes
     # y construir el DataFrame de pandas con las columnas deseadas
     # Por ejemplo:
     datos = [
