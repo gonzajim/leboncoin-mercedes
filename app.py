@@ -1,4 +1,5 @@
 import streamlit as st
+from bs4 import BeautifulSoup
 import pandas as pd
 from scrapfly import ScrapflyClient, ScrapeConfig
 
@@ -18,22 +19,40 @@ scrape_config = ScrapeConfig(
 # Realizar la solicitud de scraping
 result = scrapfly.scrape(scrape_config)
 
-# Verificar el estado de la respuesta
 if result.status_code == 200:
-    # Procesar el contenido de la página
-    # Implementa aquí la lógica para extraer los datos relevantes
-    # y construir el DataFrame de pandas con las columnas deseadas
-    # Por ejemplo:
-    datos = [
-        {"Título": "Ejemplo 1", "Precio": 20000, "KM": 150000, "Año": 2015, "Motor": "Diesel"},
-        {"Título": "Ejemplo 2", "Precio": 25000, "KM": 120000, "Año": 2016, "Motor": "Gasolina"},
-        # Agrega más datos según lo extraído
-    ]
-    df = pd.DataFrame(datos)
-    df = df.sort_values(by="Precio")
+    # Parsear el contenido HTML con BeautifulSoup
+    soup = BeautifulSoup(result.content, 'html.parser')
 
-    # Mostrar los datos en Streamlit
-    st.title("Anuncios de Mercedes-Benz Clase GLC")
-    st.dataframe(df)
+    # Extraer descripciones
+    potential_descriptions = soup.find_all(string=lambda text: text and ('Mercedes' in text or 'GLC' in text))
+
+    # Extraer precios
+    potential_prices = soup.find_all(string=lambda text: text and '\u20ac' in text)
+
+    # Extraer kilometraje
+    potential_kilometers = soup.find_all(string=lambda text: text and 'km' in text)
+
+    # Combinar los datos extraídos
+    cars = []
+    for description, price, km in zip(potential_descriptions, potential_prices, potential_kilometers):
+        cars.append({
+            'Descripción': description.strip(),
+            'Precio': price.strip().replace('\u202f', '').replace('\xa0', '').replace('€', '').strip(),
+            'Kilometraje': km.strip().replace(' km', '').replace('\u202f', '').strip()
+        })
+
+    # Crear un DataFrame
+    car_data = pd.DataFrame(cars)
+
+    # Convertir columnas a valores numéricos donde sea necesario
+    car_data['Precio'] = pd.to_numeric(car_data['Precio'], errors='coerce')
+    car_data['Kilometraje'] = pd.to_numeric(car_data['Kilometraje'], errors='coerce')
+
+    # Ordenar por precio
+    car_data = car_data.sort_values(by='Precio')
+
+    # Mostrar los resultados en Streamlit
+    st.title("Tabla de coches")
+    st.dataframe(car_data)
 else:
     st.error(f"Error al acceder a la página: {result.status_code}")
